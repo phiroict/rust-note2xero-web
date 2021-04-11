@@ -3,8 +3,8 @@
 use noted2xero_core::n2x_core::{init_logging, map_noted_to_xero};
 use noted2xero_core::n2x_core::read_file;
 use noted2xero_core::n2x_core::parse_noted_csv;
-
-use log::{info};
+use std::fs;
+use log::{info,error};
 
 
 use rocket::http::{RawStr};
@@ -17,8 +17,11 @@ use rocket::http::ContentType;
 use rocket_multipart_form_data::{mime, MultipartFormDataOptions, MultipartFormDataField, MultipartFormData};
 use std::path::PathBuf;
 use noted2xero_core::xero::XeroType;
-use rocket::response::Stream;
-use csv::WriterBuilder;
+use rocket::response::{Stream, Content};
+
+use uuid::Uuid;
+use std::fs::File;
+use std::io::{Read, Cursor};
 
 
 #[get("/healthcheck")]
@@ -29,14 +32,14 @@ fn index() -> String {
 }
 
 #[post("/noted/<start_invoice_number>", data = "<data>")]
-fn noted( start_invoice_number: &RawStr, data: Data, content_type: &ContentType) -> String {
+fn noted( start_invoice_number: &RawStr, data: Data, content_type: &ContentType) -> Content<Stream<Cursor<Vec<u8>>>> {
     info!("Got an incoming request :: noted");
     let options = MultipartFormDataOptions::with_multipart_form_data_fields(
         vec! [
             MultipartFormDataField::file("data").content_type_by_string(Some(format!("{}/{}",mime::TEXT, mime::CSV))).unwrap(),
         ]
     );
-    let mut multipart_form_data = MultipartFormData::parse(content_type, data, options).unwrap();
+    let multipart_form_data = MultipartFormData::parse(content_type, data, options).unwrap();
     let noted_section = multipart_form_data.files.get("data").unwrap();
 
     let file_fields = noted_section;
@@ -45,17 +48,36 @@ fn noted( start_invoice_number: &RawStr, data: Data, content_type: &ContentType)
     let local_path = &dataset.path;
 
     let xero_data = process_noted_file(local_path, start_invoice_number.parse::<i32>().unwrap_or(0) );
-    let mut writer = WriterBuilder::new()
-        .flexible(true)
-        .from_writer(xero_data);;
-
-
+    let target_path = format!("/{}/{}.csv", "tmp", Uuid::new_v4());
+    let mut writer = csv::Writer::from_path(&target_path).unwrap();
     let headers = XeroType::get_headers();
-    let mut return_string = "".to_string();
+    writer.write_record(headers).unwrap();
+    for item in xero_data.iter() {
+        writer.write_record(item.get_item_as_vector()).expect("Could save this line");
+    }
+    let flush_result = writer.flush();
+    match flush_result {
+        Ok(_) => {
+            info!("Stored Xero csv at {}",target_path);
+            let mut f = File::open(&target_path).expect("no file found");
+            let metadata = fs::metadata(&target_path).expect("unable to read metadata");
+            let mut buffer = vec![0; metadata.len() as usize];
+            f.read(&mut buffer).expect("buffer overflow");
+            fs::read(target_path).unwrap();
+            let mut cursor = Cursor::new(buffer);
 
-    return_string = headers.join(",");
+            cursor.set_position(0);
+            Content(ContentType::CSV, Stream::from(cursor))
+        }
+        Err(err) => {
+            error!("Could not save xero file {} because: {:?}",&target_path, err);
+            let cursor_error = Cursor::new(vec![]);
+            Content(ContentType::CSV, Stream::from(cursor_error))
+        }
 
-    return_string
+    }
+
+
 
 
 
