@@ -8,3 +8,10 @@ edition = "2018"
 
 [dependencies]
 noted2xero_core = {path = "../noted2xero_core"}
+log = "0.4.14"
+env_logger = "0.8.3"
+uuid =  { version = "0.8.2", features = ["serde", "v4"] }
+chrono = "0.4.19"
+rocket = "0.4.7"
+rocket-multipart-form-data = "0.9.6"
+csv = "1.1.6"
