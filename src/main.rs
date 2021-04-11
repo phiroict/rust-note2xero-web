@@ -5,7 +5,7 @@ use noted2xero_core::n2x_core::read_file;
 use noted2xero_core::n2x_core::parse_noted_csv;
 
 use log::{info};
-use csv::WriterBuilder;
+
 
 use rocket::http::{RawStr};
 
@@ -17,6 +17,9 @@ use rocket::http::ContentType;
 use rocket_multipart_form_data::{mime, MultipartFormDataOptions, MultipartFormDataField, MultipartFormData};
 use std::path::PathBuf;
 use noted2xero_core::xero::XeroType;
+use rocket::response::Stream;
+use csv::WriterBuilder;
+
 
 #[get("/healthcheck")]
 fn index() -> String {
@@ -36,25 +39,32 @@ fn noted( start_invoice_number: &RawStr, data: Data, content_type: &ContentType)
     let mut multipart_form_data = MultipartFormData::parse(content_type, data, options).unwrap();
     let noted_section = multipart_form_data.files.get("data").unwrap();
 
-    if let file_fields = noted_section {
-        let dataset = &file_fields[0];
-        info!("Read from data set: {:?}", dataset);
-        let local_path = &dataset.path;
-        let xero_data = process_noted_file(local_path);
+    let file_fields = noted_section;
+    let dataset = &file_fields[0];
+    info!("Read from data set: {:?}", dataset);
+    let local_path = &dataset.path;
 
-        let mut csv_writer = WriterBuilder::new().from_writer(xero_data);
+    let xero_data = process_noted_file(local_path, start_invoice_number.parse::<i32>().unwrap_or(0) );
+    let mut writer = WriterBuilder::new()
+        .flexible(true)
+        .from_writer(xero_data);;
 
 
-    }
+    let headers = XeroType::get_headers();
+    let mut return_string = "".to_string();
 
-    let retval = format!(" {{\"result\" : \"starting invoice number: {}!\"}}", start_invoice_number.as_str());
-    retval
+    return_string = headers.join(",");
+
+    return_string
+
+
+
 }
 
-fn process_noted_file(p0: &PathBuf) -> Vec<XeroType>{
+fn process_noted_file(p0: &PathBuf, xero_invoice_number: i32 ) -> Vec<XeroType>{
     let noted_contents = read_file(format!("{}",p0.display()));
     let noted_collection = parse_noted_csv(&noted_contents.unwrap());
-    let xero_collection = map_noted_to_xero(&noted_collection);
+    let xero_collection = map_noted_to_xero(&noted_collection, Option::from(xero_invoice_number));
     xero_collection
 }
 
