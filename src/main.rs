@@ -49,6 +49,7 @@ fn noted( start_invoice_number: &RawStr, data: Data, content_type: &ContentType)
 
     let xero_data = process_noted_file(local_path, start_invoice_number.parse::<i32>().unwrap_or(0) );
     let target_path = format!("/{}/{}.csv", "tmp", Uuid::new_v4());
+    info!("Store result in a temp file at {}", target_path);
     let mut writer = csv::Writer::from_path(&target_path).unwrap();
     let headers = XeroType::get_headers();
     writer.write_record(headers).unwrap();
@@ -74,13 +75,7 @@ fn noted( start_invoice_number: &RawStr, data: Data, content_type: &ContentType)
             let cursor_error = Cursor::new(vec![]);
             Content(ContentType::CSV, Stream::from(cursor_error))
         }
-
     }
-
-
-
-
-
 }
 
 fn process_noted_file(p0: &PathBuf, xero_invoice_number: i32 ) -> Vec<XeroType>{
