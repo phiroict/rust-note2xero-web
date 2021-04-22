@@ -1,6 +1,6 @@
 [package]
 name = "noted2xero_web"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Philip Rodrigues <phiroict@gmail.com>"]
 edition = "2018"
 

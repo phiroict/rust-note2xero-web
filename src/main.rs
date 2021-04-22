@@ -1,12 +1,10 @@
 #![feature(proc_macro_hygiene, decl_macro)]
 
-use log::{error, info};
+use log::{debug, error, info, warn};
 use noted2xero_core::n2x_core::parse_noted_csv;
 use noted2xero_core::n2x_core::read_file;
 use noted2xero_core::n2x_core::{init_logging, map_noted_to_xero};
 use std::fs;
-
-use rocket::http::RawStr;
 
 #[macro_use]
 extern crate rocket;
@@ -30,28 +28,37 @@ fn index() -> String {
     "Hello, world!".to_string()
 }
 
-#[post("/noted/<start_invoice_number>", data = "<data>")]
-fn noted(
-    start_invoice_number: &RawStr,
-    data: Data,
-    content_type: &ContentType,
-) -> Content<Stream<Cursor<Vec<u8>>>> {
+#[post("/noted", data = "<data>")]
+fn noted(data: Data, content_type: &ContentType) -> Content<Stream<Cursor<Vec<u8>>>> {
     info!("Got an incoming request :: noted");
     let options = MultipartFormDataOptions::with_multipart_form_data_fields(vec![
         MultipartFormDataField::file("data")
             .content_type_by_string(Some(format!("{}/{}", mime::TEXT, mime::CSV)))
             .unwrap(),
+        MultipartFormDataField::text("text"),
     ]);
-    let multipart_form_data = MultipartFormData::parse(content_type, data, options).unwrap();
+
+    let mut multipart_form_data = MultipartFormData::parse(content_type, data, options).unwrap();
     let noted_section = multipart_form_data.files.get("data").unwrap();
 
     let file_fields = noted_section;
     let dataset = &file_fields[0];
     info!("Read from data set: {:?}", dataset);
     let local_path = &dataset.path;
-
-    let xero_data =
-        process_noted_file(local_path, start_invoice_number.parse::<i32>().unwrap_or(0));
+    let start_invoice_number = multipart_form_data.texts.remove("text");
+    let invoice_number;
+    match start_invoice_number {
+        None => {
+            warn!("Could not parse the invoice number, defaults to 0");
+            invoice_number = 0;
+        }
+        Some(mut val) => {
+            let v = val.remove(0);
+            invoice_number = v.text.parse::<i32>().unwrap_or(0);
+            debug!("Parsed invoice number into INV-{}", invoice_number);
+        }
+    }
+    let xero_data = process_noted_file(local_path, invoice_number);
     let target_path = format!("/{}/{}.csv", "tmp", Uuid::new_v4());
     info!("Store result in a temp file at {}", target_path);
     let mut writer = csv::Writer::from_path(&target_path).unwrap();
