@@ -4,22 +4,20 @@ use log::{debug, error, info, warn};
 use noted2xero_core::n2x_core::parse_noted_csv;
 use noted2xero_core::n2x_core::read_file;
 use noted2xero_core::n2x_core::{init_logging, map_noted_to_xero};
-use std::fs;
+use rocket::fairing::AdHoc;
 
 #[macro_use]
 extern crate rocket;
 extern crate rocket_multipart_form_data;
+use chrono::{DateTime, Duration, Utc};
 use noted2xero_core::xero::XeroType;
-use rocket::http::ContentType;
-use rocket::response::{Content, Stream};
+use rocket::http::{ContentType, Header};
+use rocket::response::NamedFile;
 use rocket::Data;
 use rocket_multipart_form_data::{
     mime, MultipartFormData, MultipartFormDataField, MultipartFormDataOptions,
 };
 use std::path::Path;
-
-use std::fs::File;
-use std::io::{Cursor, Read};
 use uuid::Uuid;
 
 #[get("/healthcheck")]
@@ -29,7 +27,7 @@ fn index() -> String {
 }
 
 #[post("/noted", data = "<data>")]
-fn noted(data: Data, content_type: &ContentType) -> Content<Stream<Cursor<Vec<u8>>>> {
+fn noted(data: Data, content_type: &ContentType) -> Option<NamedFile> {
     info!("Got an incoming request :: noted");
     let options = MultipartFormDataOptions::with_multipart_form_data_fields(vec![
         MultipartFormDataField::file("data")
@@ -73,23 +71,14 @@ fn noted(data: Data, content_type: &ContentType) -> Content<Stream<Cursor<Vec<u8
     match flush_result {
         Ok(_) => {
             info!("Stored Xero csv at {}", target_path);
-            let mut f = File::open(&target_path).expect("no file found");
-            let metadata = fs::metadata(&target_path).expect("unable to read metadata");
-            let mut buffer = vec![0; metadata.len() as usize];
-            f.read_exact(&mut buffer).expect("buffer overflow");
-            fs::read(target_path).unwrap();
-            let mut cursor = Cursor::new(buffer);
-
-            cursor.set_position(0);
-            Content(ContentType::CSV, Stream::from(cursor))
+            NamedFile::open(&target_path).ok()
         }
         Err(err) => {
             error!(
                 "Could not save xero file {} because: {:?}",
                 &target_path, err
             );
-            let cursor_error = Cursor::new(vec![]);
-            Content(ContentType::CSV, Stream::from(cursor_error))
+            NamedFile::open(target_path).ok()
         }
     }
 }
@@ -103,6 +92,26 @@ fn process_noted_file(p0: &Path, xero_invoice_number: i32) -> Vec<XeroType> {
 fn main() {
     init_logging();
     info!("I am starting");
-    rocket::ignite().mount("/", routes![index, noted]).launch();
+    rocket::ignite()
+        .attach(AdHoc::on_response("Put header", |req, mut res| {
+            info!("I am in the fairing on_response");
+            let path = req.uri();
+            info!("Value of the path: {}", path.path().to_string());
+
+            if path.path() == "/noted" {
+                info!("Starting to enrich the noted path processing part.");
+                let current_time = Utc::now() + Duration::hours(13);
+                let date_format = current_time.format("%Y%m%d_%H%M%S");
+                res.set_header(Header::new(
+                    "Content-Disposition",
+                    format!(
+                        "attachment; filename=\"xero_import_candidate_{}.csv\"",
+                        date_format
+                    ),
+                ));
+            }
+        }))
+        .mount("/", routes![index, noted])
+        .launch();
     info!("I am done");
 }
