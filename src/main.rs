@@ -1,4 +1,5 @@
 #![feature(proc_macro_hygiene, decl_macro)]
+#![allow(unused_mut)]
 
 use log::{debug, error, info, warn};
 use noted2xero_core::n2x_core::parse_noted_csv;
@@ -9,7 +10,7 @@ use rocket::fairing::AdHoc;
 #[macro_use]
 extern crate rocket;
 extern crate rocket_multipart_form_data;
-use chrono::{DateTime, Duration, Utc};
+use chrono::{Duration, Utc};
 use noted2xero_core::xero::XeroType;
 use rocket::http::{ContentType, Header};
 use rocket::response::NamedFile;
