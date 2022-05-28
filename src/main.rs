@@ -5,21 +5,52 @@ use log::{debug, error, info, warn};
 use noted2xero_core::n2x_core::parse_noted_csv;
 use noted2xero_core::n2x_core::read_file;
 use noted2xero_core::n2x_core::{init_logging, map_noted_to_xero};
-use rocket::fairing::AdHoc;
+use rocket::fairing::{Fairing, Info, Kind};
 
 #[macro_use]
 extern crate rocket;
 extern crate rocket_multipart_form_data;
 use chrono::{Duration, Utc};
 use noted2xero_core::xero::XeroType;
+use rocket::fs::NamedFile;
 use rocket::http::{ContentType, Header};
-use rocket::response::NamedFile;
-use rocket::Data;
+use rocket::{Data, Request, Response};
 use rocket_multipart_form_data::{
     mime, MultipartFormData, MultipartFormDataField, MultipartFormDataOptions,
 };
 use std::path::Path;
 use uuid::Uuid;
+
+struct FileFairing {}
+
+#[async_trait]
+impl Fairing for FileFairing {
+    fn info(&self) -> Info {
+        Info {
+            name: "File fairing",
+            kind: (Kind::Response),
+        }
+    }
+
+    async fn on_response<'r>(&self, req: &'r Request<'_>, res: &mut Response<'r>) {
+        info!("I am in the fairing on_response");
+        let path = req.uri();
+        info!("Value of the path: {}", path.path().to_string());
+
+        if path.path() == "/noted" {
+            info!("Starting to enrich the noted path processing part.");
+            let current_time = Utc::now() + Duration::hours(13);
+            let date_format = current_time.format("%Y%m%d_%H%M%S");
+            res.set_header(Header::new(
+                "Content-Disposition",
+                format!(
+                    "attachment; filename=\"xero_import_candidate_{}.csv\"",
+                    date_format
+                ),
+            ));
+        }
+    }
+}
 
 #[get("/healthcheck")]
 fn index() -> String {
@@ -28,7 +59,7 @@ fn index() -> String {
 }
 
 #[post("/noted", data = "<data>")]
-fn noted(data: Data, content_type: &ContentType) -> Option<NamedFile> {
+async fn noted(data: Data<'_>, content_type: &ContentType) -> Option<NamedFile> {
     info!("Got an incoming request :: noted");
     let options = MultipartFormDataOptions::with_multipart_form_data_fields(vec![
         MultipartFormDataField::file("data")
@@ -37,11 +68,14 @@ fn noted(data: Data, content_type: &ContentType) -> Option<NamedFile> {
         MultipartFormDataField::text("text"),
     ]);
 
-    let mut multipart_form_data = MultipartFormData::parse(content_type, data, options).unwrap();
-    let noted_section = multipart_form_data.files.get("data").unwrap();
+    let mut multipart_form_data = MultipartFormData::parse(content_type, data, options)
+        .await
+        .unwrap();
+
+    let noted_section = multipart_form_data.files.get("data");
 
     let file_fields = noted_section;
-    let dataset = &file_fields[0];
+    let dataset = &file_fields.unwrap()[0];
     info!("Read from data set: {:?}", dataset);
     let local_path = &dataset.path;
     let start_invoice_number = multipart_form_data.texts.remove("text");
@@ -72,14 +106,14 @@ fn noted(data: Data, content_type: &ContentType) -> Option<NamedFile> {
     match flush_result {
         Ok(_) => {
             info!("Stored Xero csv at {}", target_path);
-            NamedFile::open(&target_path).ok()
+            NamedFile::open(&target_path).await.ok()
         }
         Err(err) => {
             error!(
                 "Could not save xero file {} because: {:?}",
                 &target_path, err
             );
-            NamedFile::open(target_path).ok()
+            NamedFile::open(target_path).await.ok()
         }
     }
 }
@@ -90,29 +124,25 @@ fn process_noted_file(p0: &Path, xero_invoice_number: i32) -> Vec<XeroType> {
     map_noted_to_xero(&noted_collection, Option::from(xero_invoice_number))
 }
 
-fn main() {
+#[rocket::main]
+async fn main() {
     init_logging();
+    let fairing = FileFairing {};
     info!("I am starting");
-    rocket::ignite()
-        .attach(AdHoc::on_response("Put header", |req, mut res| {
-            info!("I am in the fairing on_response");
-            let path = req.uri();
-            info!("Value of the path: {}", path.path().to_string());
 
-            if path.path() == "/noted" {
-                info!("Starting to enrich the noted path processing part.");
-                let current_time = Utc::now() + Duration::hours(13);
-                let date_format = current_time.format("%Y%m%d_%H%M%S");
-                res.set_header(Header::new(
-                    "Content-Disposition",
-                    format!(
-                        "attachment; filename=\"xero_import_candidate_{}.csv\"",
-                        date_format
-                    ),
-                ));
-            }
-        }))
+    let process = rocket::build()
+        .attach(fairing)
         .mount("/", routes![index, noted])
-        .launch();
+        .launch()
+        .await;
+    match process {
+        Ok(_) => {
+            info!("Process started")
+        }
+        Err(e) => {
+            error!("Could not create the rocket instance {}", e.to_string());
+        }
+    }
+
     info!("I am done");
 }
