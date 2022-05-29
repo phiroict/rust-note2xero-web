@@ -124,6 +124,16 @@ fn process_noted_file(p0: &Path, xero_invoice_number: i32) -> Vec<XeroType> {
     map_noted_to_xero(&noted_collection, Option::from(xero_invoice_number))
 }
 
+#[catch(500)]
+fn internal_error() -> &'static str {
+    "Could not process this call"
+}
+
+#[catch(404)]
+fn not_found(req: &Request) -> String {
+    format!("I couldn't find '{}'. Try something else?", req.uri())
+}
+
 #[rocket::main]
 async fn main() {
     init_logging();
@@ -133,6 +143,7 @@ async fn main() {
     let process = rocket::build()
         .attach(fairing)
         .mount("/", routes![index, noted])
+        .register("/", catchers![internal_error, not_found])
         .launch()
         .await;
     match process {
