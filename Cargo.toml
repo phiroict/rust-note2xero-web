@@ -1,6 +1,6 @@
 [package]
 name = "noted2xero_web"
-version = "1.11.2"
+version = "1.11.3"
 authors = ["Philip Rodrigues <phiroict@gmail.com>"]
 edition = "2018"
 description = "A simple REST interface for the NOTED to XERO conversion"
