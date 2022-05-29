@@ -4,7 +4,7 @@ version = "1.11.2"
 authors = ["Philip Rodrigues <phiroict@gmail.com>"]
 edition = "2018"
 description = "A simple REST interface for the NOTED to XERO conversion"
-license = "GPL v2"
+license = "GPL-2.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
