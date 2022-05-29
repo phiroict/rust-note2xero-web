@@ -5,6 +5,7 @@ authors = ["Philip Rodrigues <phiroict@gmail.com>"]
 edition = "2018"
 description = "A simple REST interface for the NOTED to XERO conversion"
 license = "GPL-2.0"
+repository = "git@github.com:phiroict/rust-note2xero-web.git"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
