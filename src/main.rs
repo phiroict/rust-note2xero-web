@@ -10,7 +10,7 @@ use rocket::fairing::{Fairing, Info, Kind};
 #[macro_use]
 extern crate rocket;
 extern crate rocket_multipart_form_data;
-use chrono::{Duration, Utc};
+use chrono::{Duration, Local};
 use noted2xero_core::xero::XeroType;
 use rocket::fs::NamedFile;
 use rocket::http::{ContentType, Header};
@@ -39,7 +39,7 @@ impl Fairing for FileFairing {
 
         if path.path() == "/noted" {
             info!("Starting to enrich the noted path processing part.");
-            let current_time = Utc::now() + Duration::hours(13);
+            let current_time = Local::now();
             let date_format = current_time.format("%Y%m%d_%H%M%S");
             res.set_header(Header::new(
                 "Content-Disposition",
