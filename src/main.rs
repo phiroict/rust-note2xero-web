@@ -19,6 +19,7 @@ use rocket_multipart_form_data::{
     mime, MultipartFormData, MultipartFormDataField, MultipartFormDataOptions,
 };
 use std::path::Path;
+use rocket::form::validate::len;
 use uuid::Uuid;
 
 struct FileFairing {}
@@ -88,16 +89,19 @@ async fn noted(data: Data<'_>, content_type: &ContentType) -> Option<NamedFile> 
         Some(mut val) => {
             let v = val.remove(0);
             invoice_number = v.text.parse::<i32>().unwrap_or(0);
-            debug!("Parsed invoice number into INV-{}", invoice_number);
+            info!("Parsed invoice number into INV-{}", invoice_number);
         }
     }
     let xero_data = process_noted_file(local_path, invoice_number);
     let target_path = format!("/{}/{}.csv", "tmp", Uuid::new_v4());
     info!("Store result in a temp file at {}", target_path);
+    info!("Number of lines read: {}", xero_data.len());
     let mut writer = csv::Writer::from_path(&target_path).unwrap();
     let headers = XeroType::get_headers();
+
     writer.write_record(headers).unwrap();
     for item in xero_data.iter() {
+        info!("Processing line ");
         writer
             .write_record(item.get_item_as_vector())
             .expect("Could save this line");
@@ -121,6 +125,7 @@ async fn noted(data: Data<'_>, content_type: &ContentType) -> Option<NamedFile> 
 fn process_noted_file(p0: &Path, xero_invoice_number: i32) -> Vec<XeroType> {
     let noted_contents = read_file(format!("{}", p0.display()));
     let noted_collection = parse_noted_csv(&noted_contents.unwrap());
+    info!("noted collection parsed, have {} entries", noted_collection.len());
     map_noted_to_xero(&noted_collection, Option::from(xero_invoice_number))
 }
 
