@@ -1,6 +1,6 @@
 [package]
 name = "noted2xero_web"
-version = "1.11.1"
+version = "1.11.2"
 authors = ["Philip Rodrigues <phiroict@gmail.com>"]
 edition = "2018"
 
@@ -15,7 +15,7 @@ chrono = "0.4.19"
 rocket = "0.5.0-rc.2"
 rocket-multipart-form-data = "0.10.3"
 csv = "1.1.6"
-serde = "1.0.137"
+serde = "1.0.139"
 async-trait = "0.1.56"
 
 [dependencies.async-std]
