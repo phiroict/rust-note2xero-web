@@ -1,7 +1,7 @@
 #![feature(proc_macro_hygiene, decl_macro)]
 #![allow(unused_mut)]
 
-use log::{debug, error, info, warn};
+use log::{error, info, warn};
 use noted2xero_core::n2x_core::parse_noted_csv;
 use noted2xero_core::n2x_core::read_file;
 use noted2xero_core::n2x_core::{init_logging, map_noted_to_xero};
@@ -12,6 +12,7 @@ extern crate rocket;
 extern crate rocket_multipart_form_data;
 use chrono::{Duration, Utc};
 use noted2xero_core::xero::XeroType;
+
 use rocket::fs::NamedFile;
 use rocket::http::{ContentType, Header};
 use rocket::{Data, Request, Response};
@@ -19,7 +20,6 @@ use rocket_multipart_form_data::{
     mime, MultipartFormData, MultipartFormDataField, MultipartFormDataOptions,
 };
 use std::path::Path;
-use rocket::form::validate::len;
 use uuid::Uuid;
 
 struct FileFairing {}
@@ -44,10 +44,7 @@ impl Fairing for FileFairing {
             let date_format = current_time.format("%Y%m%d_%H%M%S");
             res.set_header(Header::new(
                 "Content-Disposition",
-                format!(
-                    "attachment; filename=\"xero_import_candidate_{}.csv\"",
-                    date_format
-                ),
+                format!("attachment; filename=\"xero_import_candidate_{date_format}.csv\""),
             ));
         }
     }
@@ -125,7 +122,10 @@ async fn noted(data: Data<'_>, content_type: &ContentType) -> Option<NamedFile> 
 fn process_noted_file(p0: &Path, xero_invoice_number: i32) -> Vec<XeroType> {
     let noted_contents = read_file(format!("{}", p0.display()));
     let noted_collection = parse_noted_csv(&noted_contents.unwrap());
-    info!("noted collection parsed, have {} entries", noted_collection.len());
+    info!(
+        "noted collection parsed, have {} entries",
+        noted_collection.len()
+    );
     map_noted_to_xero(&noted_collection, Option::from(xero_invoice_number))
 }
 
