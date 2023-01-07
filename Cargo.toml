@@ -10,13 +10,13 @@ edition = "2018"
 noted2xero_core = {path = "../noted2xero_core"}
 log = "0.4.17"
 env_logger = "0.10.0"
-uuid =  { version = "1.1.2", features = ["serde", "v4"] }
-chrono = "0.4.19"
+uuid =  { version = "1.2.2", features = ["serde", "v4"] }
+chrono = "0.4.23"
 rocket = "0.5.0-rc.2"
-rocket-multipart-form-data = "0.10.3"
+rocket-multipart-form-data = "0.10.5"
 csv = "1.1.6"
-serde = "1.0.139"
-async-trait = "0.1.56"
+serde = "1.0.152"
+async-trait = "0.1.61"
 
 [dependencies.async-std]
 version = "1.12.0"
