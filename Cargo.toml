@@ -2,7 +2,7 @@
 name = "noted2xero_web"
 version = "1.11.5"
 authors = ["Philip Rodrigues <phiroict@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -10,13 +10,13 @@ edition = "2018"
 noted2xero_core = {path = "../noted2xero_core"}
 log = "0.4.17"
 env_logger = "0.10.0"
-uuid =  { version = "1.2.2", features = ["serde", "v4"] }
+uuid =  { version = "1.3.0", features = ["serde", "v4"] }
 chrono = "0.4.23"
 rocket = "0.5.0-rc.2"
 rocket-multipart-form-data = "0.10.5"
 csv = "1.1.6"
 serde = "1.0.152"
-async-trait = "0.1.63"
+async-trait = "0.1.64"
 
 [dependencies.async-std]
 version = "1.12.0"
