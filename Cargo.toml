@@ -3,6 +3,9 @@ name = "noted2xero_web"
 version = "1.11.10"
 authors = ["Philip Rodrigues <phiroict@gmail.com>"]
 edition = "2021"
+license = "GPL-2.0"
+repository = "https://github.com/phiroict/rust-note2xero-web.git"
+description = "A web api for the noted2xero core component"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
