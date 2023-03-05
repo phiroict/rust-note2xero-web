@@ -1,6 +1,6 @@
 [package]
 name = "noted2xero_web"
-version = "1.11.10"
+version = "1.11.11"
 authors = ["Philip Rodrigues <phiroict@gmail.com>"]
 edition = "2021"
 license = "GPL-2.0"
@@ -10,7 +10,7 @@ description = "A web api for the noted2xero core component"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-noted2xero_core = {path = "../noted2xero_core", version="1.11.10"}
+noted2xero_core = {path = "../noted2xero_core", version="1.11.11"}
 log = "0.4.17"
 env_logger = "0.10.0"
 uuid =  { version = "1.3.0", features = ["serde", "v4"] }
@@ -19,7 +19,7 @@ rocket = "0.5.0-rc.2"
 rocket-multipart-form-data = "0.10.5"
 csv = "1.2.0"
 serde = "1.0.152"
-async-trait = "0.1.64"
+async-trait = "0.1.65"
 
 [dependencies.async-std]
 version = "1.12.0"
