@@ -10,7 +10,7 @@ use rocket::fairing::{Fairing, Info, Kind};
 #[macro_use]
 extern crate rocket;
 extern crate rocket_multipart_form_data;
-use chrono::{Duration, Local};
+use chrono::Local;
 use noted2xero_core::xero::XeroType;
 use rocket::fs::NamedFile;
 use rocket::http::{ContentType, Header};
