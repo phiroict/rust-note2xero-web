@@ -13,13 +13,13 @@ noted2xero_core = {path = "../noted2xero_core", version ="1.11.8"}
 log = "0.4.17"
 env_logger = "0.10.0"
 uuid =  { version = "1.1.0", features = ["serde", "v4"] }
-chrono = "0.4.19"
+chrono = "0.4.24"
 rocket = "0.5.0-rc.3"
-rocket-multipart-form-data = "0.10.3"
-csv = "1.1.6"
-serde = "1.0.137"
-async-trait = "0.1.53"
+rocket-multipart-form-data = "0.10.5"
+csv = "1.2.1"
+serde = "1.0.163"
+async-trait = "0.1.68"
 
 [dependencies.async-std]
-version = "1.11.0"
+version = "1.12.0"
 features = ["attributes"]
