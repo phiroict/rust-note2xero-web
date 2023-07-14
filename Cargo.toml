@@ -1,24 +1,24 @@
 [package]
 name = "noted2xero_web"
-version = "1.11.8"
+version = "1.12.0"
 authors = ["Philip Rodrigues <phiroict@gmail.com>"]
-edition = "2018"
+edition = "2021"
 description = "A simple REST interface for the NOTED to XERO conversion"
 license = "GPL-2.0"
 repository = "https://github.com/phiroict/rust-note2xero-web"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-noted2xero_core = {path = "../noted2xero_core", version ="1.11.8"}
-log = "0.4.17"
+noted2xero_core = {path = "../noted2xero_core", version ="1.12.0"}
+log = "0.4.19"
 env_logger = "0.10.0"
-uuid =  { version = "1.1.0", features = ["serde", "v4"] }
-chrono = "0.4.24"
+uuid =  { version = "1.4.0", features = ["serde", "v4"] }
+chrono = "0.4.26"
 rocket = "0.5.0-rc.3"
 rocket-multipart-form-data = "0.10.5"
-csv = "1.2.1"
-serde = "1.0.163"
-async-trait = "0.1.68"
+csv = "1.2.2"
+serde = "1.0.171"
+async-trait = "0.1.71"
 
 [dependencies.async-std]
 version = "1.12.0"
